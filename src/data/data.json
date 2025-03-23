@@ -1,0 +1,15 @@
+{
+    "customers": [
+      { "id": 1, "name": "Customer A", "totalSpent": 1000, "purchases": 5 },
+      { "id": 2, "name": "Customer B", "totalSpent": 500, "purchases": 3 }
+    ],
+    "products": [
+      { "id": 1, "name": "Product 1", "totalPurchased": 10 },
+      { "id": 2, "name": "Product 2", "totalPurchased": 7 }
+    ],
+    "promos": [
+      { "id": 1, "customer": "Customer A", "promoCode": "PROMO15", "status": "Accepted" },
+      { "id": 2, "customer": "Customer B", "promoCode": "PROMO10", "status": "Pending" }
+    ]
+  }
+  
