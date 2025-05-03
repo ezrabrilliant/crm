@@ -2,17 +2,17 @@
 const Promo = require("../models/Promo");
 
 // GET all promos
-exports.getAllPromos = async (req, res) => {
+const getAllPromos = async (req, res) => {
   try {
     const promos = await Promo.find({});
-    res.json(promos); // promos = array
+    res.json(promos);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
 // CREATE promo
-exports.createPromo = async (req, res) => {
+const createPromo = async (req, res) => {
   try {
     const { id, customer, promoCode, status, used, discount, date } = req.body;
     const newPromo = await Promo.create({
@@ -31,7 +31,7 @@ exports.createPromo = async (req, res) => {
 };
 
 // APPROVE promo
-exports.approvePromo = async (req, res) => {
+const approvePromo = async (req, res) => {
   try {
     const { id } = req.params; // ID numerik di URL
     const { newCode } = req.body;
@@ -42,7 +42,6 @@ exports.approvePromo = async (req, res) => {
       {
         status: "Accepted",
         used: false,
-        // newCode opsional
         ...(newCode && { promoCode: newCode }),
       },
       { new: true }
@@ -52,4 +51,46 @@ exports.approvePromo = async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+};
+
+// REJECT promo
+const rejectPromo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await Promo.findOneAndUpdate(
+      { id: parseInt(id, 10) },
+      { status: "Rejected", used: false },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ error: "Promo not found" });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// MARK promo as used
+const markAsUsed = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await Promo.findOneAndUpdate(
+      { id: parseInt(id, 10) },
+      { used: true },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ error: "Promo not found" });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+
+
+module.exports = {
+  getAllPromos,
+  createPromo,
+  rejectPromo,
+  approvePromo,
+  markAsUsed
 };

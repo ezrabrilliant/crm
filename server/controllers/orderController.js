@@ -2,7 +2,7 @@
 const Order = require("../models/Order");
 
 // GET all orders
-exports.getAllOrders = async (req, res) => {
+const getAllOrders = async (req, res) => {
   try {
     // Karena "customer" dan "productId" adalah field Number/String,
     // kita tidak bisa .populate(...). Cukup find() semua
@@ -14,7 +14,7 @@ exports.getAllOrders = async (req, res) => {
 };
 
 // CREATE order
-exports.createOrder = async (req, res) => {
+const createOrder = async (req, res) => {
   try {
     // misalnya user kirim: { id, customer, date, quantity, productId }
     const { id, customer, date, quantity, productId } = req.body;
@@ -31,4 +31,9 @@ exports.createOrder = async (req, res) => {
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
+};
+
+module.exports = {
+  getAllOrders,
+  createOrder,
 };

@@ -1,7 +1,8 @@
 const Customer = require("../models/Customer");
+const mongoose = require("mongoose");
 
 // GET all customers
-exports.getAllCustomers = async (req, res) => {
+const getAllCustomers = async (req, res) => {
   try {
     const customers = await Customer.find({});
     res.json(customers);
@@ -11,30 +12,29 @@ exports.getAllCustomers = async (req, res) => {
 };
 
 // CREATE customer
-exports.createCustomer = async (req, res) => {
+const createCustomer = async (req, res) => {
   try {
-    const { id, name, totalSpent, purchases } = req.body;
-    const newCustomer = await Customer.create({
-      id,
-      name,
-      totalSpent,
-      purchases,
-    });
+    const { name, totalSpent, purchases } = req.body;
+    const newCustomer = await Customer.create({ name, totalSpent, purchases });
     res.status(201).json(newCustomer);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 };
 
-// UPDATE customer by numeric ID
-exports.updateCustomer = async (req, res) => {
+// UPDATE customer by MongoDB _id
+const updateCustomer = async (req, res) => {
   try {
-    const { id } = req.params; // numeric
+    const { id } = req.params;
+    // validate ObjectId
+    if (!mongoose.isObjectIdOrHexString(id)) {
+      return res.status(400).json({ error: "Invalid customer ID" });
+    }
     const { name, totalSpent, purchases } = req.body;
-    const updated = await Customer.findOneAndUpdate(
-      { id: parseInt(id, 10) },
+    const updated = await Customer.findByIdAndUpdate(
+      id,
       { name, totalSpent, purchases },
-      { new: true }
+      { new: true, runValidators: true }
     );
     if (!updated) {
       return res.status(404).json({ error: "Customer not found" });
@@ -45,11 +45,14 @@ exports.updateCustomer = async (req, res) => {
   }
 };
 
-// DELETE customer
-exports.deleteCustomer = async (req, res) => {
+// DELETE customer by MongoDB _id
+const deleteCustomer = async (req, res) => {
   try {
     const { id } = req.params;
-    const deleted = await Customer.findOneAndDelete({ id: parseInt(id, 10) });
+    if (!mongoose.isObjectIdOrHexString(id)) {
+      return res.status(400).json({ error: "Invalid customer ID" });
+    }
+    const deleted = await Customer.findByIdAndDelete(id);
     if (!deleted) {
       return res.status(404).json({ error: "Customer not found" });
     }
@@ -57,4 +60,11 @@ exports.deleteCustomer = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+};
+
+module.exports = {
+  getAllCustomers,
+  createCustomer,
+  updateCustomer,
+  deleteCustomer,
 };

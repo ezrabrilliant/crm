@@ -1,140 +1,111 @@
-// src/pages/PromoPage.jsx
-import React, { useState } from "react";
-import data from "../data/data.json"; // Pastikan data.json sudah memiliki properti "used" di setiap promo
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import Button from "../components/Button";
 import Card from "../components/Card";
 import CardContent from "../components/CardContent";
+import { RefreshCw } from "lucide-react";
+import ErrorAlert from "../components/ErrorAlert";
+import SearchBar from "../components/SearchBar";
+import PromoTable from "../components/promo/PromoTable";
+import PromoSummary from "../components/promo/PromoSummary";
+import Loader from "../components/Loader";
 
 export default function PromoPage() {
-  // Memuat data promos dari data.json
-  const [promos, setPromos] = useState(data.promos);
+  const [promos, setPromos] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  // Fungsi untuk mengembalikan styling badge sesuai status promo dan used flag
-  const getStatusBadge = (promo) => {
-    if (promo.status === "Accepted") {
-      return promo.used
-        ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-        : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
-    } else if (promo.status === "Rejected") {
-      return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
-    } else {
-      // Pending
-      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300";
+  useEffect(() => {
+    fetchPromos();
+  }, []);
+
+  const fetchPromos = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get("/api/promos");
+      setPromos(res.data);
+    } catch (err) {
+      setError("Failed to load promo data. Please try again.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Fungsi untuk mengembalikan label status promo
-  const getStatusLabel = (promo) => {
-    if (promo.status === "Accepted") {
-      return promo.used ? "Accepted (Used)" : "Accepted (Not Used)";
-    }
-    return promo.status;
+  const handleRefresh = () => fetchPromos();
+
+  const summary = {
+    total: promos.length,
+    pending: promos.filter(p => p.status === "Pending").length,
+    active: promos.filter(p => p.status === "Accepted" && !p.used).length,
+    used: promos.filter(p => p.status === "Accepted" && p.used).length,
+    rejected: promos.filter(p => p.status === "Rejected").length,
   };
 
-  // Fungsi untuk handle Approve
-  const handleApprove = (promoId) => {
-    const newCode = prompt("Enter discount/promo code:", "");
-    setPromos((prevPromos) =>
-      prevPromos.map((p) =>
-        p.id === promoId
-          ? {
-              ...p,
-              status: "Accepted",
-              used: false,
-              promoCode: newCode || p.promoCode, // Jika input kosong, gunakan promoCode lama
-            }
-          : p
-      )
-    );
-  };
-
-  // Fungsi untuk handle Reject
-  const handleReject = (promoId) => {
-    setPromos((prevPromos) =>
-      prevPromos.map((p) =>
-        p.id === promoId ? { ...p, status: "Rejected", used: false } : p
-      )
-    );
-  };
-
-  // Fungsi untuk menandai promo sebagai sudah digunakan
-  const handleMarkAsUsed = (promoId) => {
-    setPromos((prevPromos) =>
-      prevPromos.map((p) =>
-        p.id === promoId ? { ...p, used: true } : p
-      )
-    );
-  };
+  const filteredPromos = promos.filter(p => {
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = !term ||
+      p.customer.toLowerCase().includes(term) ||
+      p.promoCode?.toLowerCase().includes(term) ||
+      p.id.toString().includes(term);
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "pending" && p.status === "Pending") ||
+      (statusFilter === "active" && p.status === "Accepted" && !p.used) ||
+      (statusFilter === "used" && p.status === "Accepted" && p.used) ||
+      (statusFilter === "rejected" && p.status === "Rejected");
+    return matchesSearch && matchesStatus;
+  });
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4 dark:text-white">
-        Promo Management
-      </h1>
+    <div className="p-6 max-w-7xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6 dark:text-white">Promo Management</h1>
+
+      {error && <ErrorAlert message={error} onClose={() => setError(null)} />}
+
+      <PromoSummary summary={summary} />
+
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+          <SearchBar
+            term={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Search by customer, code or ID..."
+          />
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="border border-gray-300 dark:border-gray-600 p-2 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          >
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="active">Active</option>
+            <option value="used">Used</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <Button
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="bg-gray-500 hover:bg-gray-600"
+          >
+            {isLoading ? <Loader size="sm" /> : <span className="flex items-center"><RefreshCw className="w-5 h-5 mr-1" />Refresh</span>}
+          </Button>
+        </div>
+
       <Card>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-4 py-2 dark:text-gray-200">Promo ID</th>
-                  <th className="px-4 py-2 dark:text-gray-200">Customer</th>
-                  <th className="px-4 py-2 dark:text-gray-200">Promo Code</th>
-                  <th className="px-4 py-2 dark:text-gray-200">Status</th>
-                  <th className="px-4 py-2 dark:text-gray-200">Date</th>
-                  <th className="px-4 py-2 dark:text-gray-200 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {promos.map((promo) => (
-                  <tr key={promo.id}>
-                    <td className="px-4 py-2 dark:text-gray-100">{promo.id}</td>
-                    <td className="px-4 py-2 dark:text-gray-100">{promo.customer}</td>
-                    <td className="px-4 py-2 dark:text-gray-100">{promo.promoCode}</td>
-                    <td className="px-4 py-2">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadge(promo)}`}
-                      >
-                        {getStatusLabel(promo)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2 dark:text-gray-100">{promo.date}</td>
-                    <td className="px-4 py-2">
-                      {promo.status === "Pending" ? (
-                        <div className="flex justify-center items-center space-x-2">
-                          <Button
-                            onClick={() => handleApprove(promo.id)}
-                            className="bg-green-500 hover:bg-green-600"
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            onClick={() => handleReject(promo.id)}
-                            className="bg-red-500 hover:bg-red-600"
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      ) : promo.status === "Accepted" && !promo.used ? (
-                        <div className="flex justify-center items-center">
-                          <Button
-                            onClick={() => handleMarkAsUsed(promo.id)}
-                            className="bg-blue-500 hover:bg-blue-600"
-                          >
-                            Mark as Used
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="dark:text-gray-300 text-gray-600 text-center block">
-                          No action
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {isLoading ? (
+            <Loader size="lg" />
+          ) : (
+            <PromoTable
+              promos={filteredPromos}
+              onApprove={async id => {/* implement */}}
+              onReject={async id => {/* implement */}}
+              onMarkUsed={async id => {/* implement */}}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

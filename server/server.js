@@ -1,4 +1,3 @@
-// server/server.js
 const express = require("express");
 const mongoose = require("mongoose");
 const routes = require("./routes");
@@ -9,7 +8,7 @@ app.use(express.json());
 
 const MONGO_URI = process.env.MONGO_URI;
 
-// Koneksi MongoDB
+// MongoDB connection
 mongoose.connect(`${MONGO_URI}`, {
     useNewUrlParser: true,
     useUnifiedTopology: true
@@ -17,10 +16,10 @@ mongoose.connect(`${MONGO_URI}`, {
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB error:", err));
 
-// Gunakan routes
+// Use API routes
 app.use("/api", routes);
 
-// Jalankan server
+// Start server
 const PORT = 5001;
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
