@@ -24,7 +24,7 @@ export default function ProductTable({ products, isLoading, sortConfig, requestS
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  {["name", "stock", "price", "dimensions"].map((key) => (
+                  {['name', 'stock', 'price', 'dimensions'].map((key) => (
                     <th
                       key={key}
                       className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
@@ -39,34 +39,49 @@ export default function ProductTable({ products, isLoading, sortConfig, requestS
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {products.map((product) => (
-                  <tr key={product._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-4 py-3 dark:text-gray-100">{product.name}</td>
-                    <td className="px-4 py-3 dark:text-gray-100">
-                      <span className={product.stock <= 5 ? "text-red-500 font-medium" : ""}>
-                        {product.stock} {product.stock <= 5 && "(Low)"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 dark:text-gray-100">${product.price.toFixed(2)}</td>
-                    <td className="px-4 py-3 dark:text-gray-100">{product.dimensions}</td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex justify-center space-x-2">
-                        <Button
-                          onClick={() => onEdit(product)}
-                          className="bg-yellow-500 hover:bg-yellow-600 text-xs py-1 px-2"
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          onClick={() => onDelete(product._id, product.name)}
-                          className="bg-red-500 hover:bg-red-600 text-xs py-1 px-2"
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {products.map((product) => {
+                  // Kondisi stok: <5 = Low (merah), <10 = Almost (kuning), >=10 = Safe (hijau)
+                  let stockClass = '';
+                  let stockLabel = '';
+                  if (product.stock < 5) {
+                    stockClass = 'text-red-500 font-medium';
+                    stockLabel = ' (Low)';
+                  } else if (product.stock < 10) {
+                    stockClass = 'text-yellow-500 font-medium';
+                    stockLabel = ' (Almost)';
+                  } else {
+                    stockClass = 'text-green-500 font-medium';
+                    stockLabel = ' (Safe)';
+                  }
+                  return (
+                    <tr key={product._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-4 py-3 dark:text-gray-100">{product.name}</td>
+                      <td className="px-4 py-3 dark:text-gray-100">
+                        <span className={stockClass}>
+                          {product.stock}{stockLabel}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 dark:text-gray-100">${product.price.toFixed(2)}</td>
+                      <td className="px-4 py-3 dark:text-gray-100">{product.dimensions}</td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex justify-center space-x-2">
+                          <Button
+                            onClick={() => onEdit(product)}
+                            className="bg-yellow-500 hover:bg-yellow-600 text-xs py-1 px-2"
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            onClick={() => onDelete(product._id, product.name)}
+                            className="bg-red-500 hover:bg-red-600 text-xs py-1 px-2"
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
